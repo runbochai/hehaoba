@@ -18,12 +18,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            /* --- 核心修复开始 --- */
-            height: 100vh; /* 兼容旧浏览器 */
-            height: 100dvh; /* 核心：适应手机动态工具栏高度 */
+            height: 100vh; 
+            height: 100dvh; 
             box-sizing: border-box; 
-            padding-bottom: env(safe-area-inset-bottom); /* 核心：避开iPhone底部黑条 */
-            /* --- 核心修复结束 --- */
+            padding-bottom: env(safe-area-inset-bottom); 
             width: 100vw;
             background-color: var(--bg-color);
             font-family: 'Microsoft YaHei', sans-serif;
@@ -34,14 +32,14 @@
         }
 
         #text-box {
-            font-size: 2.5rem; /* 稍微改小一点点防止换行 */
+            font-size: 2.5rem;
             color: #ff8da1;
-            margin-bottom: 20px; /* 间距收紧 */
+            margin-bottom: 20px; 
             font-weight: 900;
             z-index: 10;
             filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5));
             user-select: none;
-            text-align: center; /* 防止文字太长偏左 */
+            text-align: center; 
             padding: 0 20px;
         }
 
@@ -52,7 +50,7 @@
             border: 6px solid #fff0f5;
             box-shadow: 0 10px 20px rgba(255, 182, 193, 0.4);
             object-fit: cover;
-            margin-bottom: 30px; /* 间距收紧 */
+            margin-bottom: 30px; 
             z-index: 10;
             pointer-events: none;
             user-select: none;
@@ -61,12 +59,12 @@
 
         .button-group {
             display: flex;
-            gap: 30px; /* 按钮间距稍微收紧 */
+            gap: 30px; 
             justify-content: center;
             align-items: center;
             position: relative;
             width: 100%;
-            height: 80px; /* 容器高度稍微改小 */
+            height: 80px; 
             z-index: 10;
         }
 
@@ -111,7 +109,6 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            /* 同样适配手机高度 */
             height: 100dvh; 
             padding-bottom: env(safe-area-inset-bottom);
             box-sizing: border-box;
@@ -220,8 +217,8 @@
             const taunts = ["你说啥！？", "才不要...", "滚！", "还是算了吧...", "就不！", "就不跟你好！", "打咩!", "滚粗！", "想得美！"];
             noBtn.innerText = taunts[Math.floor(Math.random() * taunts.length)];
 
-            // 【参数调整】按钮变大速度
-            yesSize += 0.15; 
+            // 按钮变大速度
+            yesSize += 0.30; 
             yesBtn.style.transform = `scale(${yesSize})`;
         }
 
@@ -256,7 +253,7 @@
             confetti.style.width = size;
             confetti.style.height = size;
             
-            // 随机动画类型（稀有度系统）
+            // 随机动画类型
             const rand = Math.random(); 
             
             if (rand < 0.20) {
@@ -302,3 +299,4 @@
     </script>
 </body>
 </html>
+
