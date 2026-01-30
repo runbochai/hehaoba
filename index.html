@@ -18,24 +18,31 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            /* --- 核心修复开始 --- */
+            height: 100vh; /* 兼容旧浏览器 */
+            height: 100dvh; /* 核心：适应手机动态工具栏高度 */
+            box-sizing: border-box; 
+            padding-bottom: env(safe-area-inset-bottom); /* 核心：避开iPhone底部黑条 */
+            /* --- 核心修复结束 --- */
             width: 100vw;
             background-color: var(--bg-color);
             font-family: 'Microsoft YaHei', sans-serif;
-            overflow: hidden; /* 禁止出现滚动条 */
-            position: fixed;  /* 锁死屏幕，防止iOS橡皮筋效果 */
+            overflow: hidden; 
+            position: fixed; 
             touch-action: none;
-            perspective: 1000px; /* 为3D旋转动画提供透视效果 */
+            perspective: 1000px;
         }
 
         #text-box {
-            font-size: 2.8rem;
+            font-size: 2.5rem; /* 稍微改小一点点防止换行 */
             color: #ff8da1;
-            margin-bottom: 30px;
+            margin-bottom: 20px; /* 间距收紧 */
             font-weight: 900;
             z-index: 10;
             filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5));
             user-select: none;
+            text-align: center; /* 防止文字太长偏左 */
+            padding: 0 20px;
         }
 
         .main-image {
@@ -45,21 +52,21 @@
             border: 6px solid #fff0f5;
             box-shadow: 0 10px 20px rgba(255, 182, 193, 0.4);
             object-fit: cover;
-            margin-bottom: 40px;
+            margin-bottom: 30px; /* 间距收紧 */
             z-index: 10;
-            pointer-events: none; /* 禁止长按保存图片 */
+            pointer-events: none;
             user-select: none;
-            transition: all 0.2s ease; /* 图片切换时的平滑过渡 */
+            transition: all 0.2s ease;
         }
 
         .button-group {
             display: flex;
-            gap: 40px;
+            gap: 30px; /* 按钮间距稍微收紧 */
             justify-content: center;
             align-items: center;
             position: relative;
             width: 100%;
-            height: 100px;
+            height: 80px; /* 容器高度稍微改小 */
             z-index: 10;
         }
 
@@ -73,7 +80,7 @@
             transition: all 0.2s;
             white-space: nowrap;
             user-select: none;
-            -webkit-tap-highlight-color: transparent; /* 移除手机端点击高亮 */
+            -webkit-tap-highlight-color: transparent;
         }
 
         #yes-btn {
@@ -104,9 +111,12 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
+            /* 同样适配手机高度 */
+            height: 100dvh; 
+            padding-bottom: env(safe-area-inset-bottom);
+            box-sizing: border-box;
         }
 
-        /* --- 撒花特效 CSS --- */
         .confetti {
             position: fixed;
             top: -20px;
@@ -117,21 +127,18 @@
             animation-fill-mode: forwards;
         }
 
-        /* 动画1: 直落 (80%概率) */
         @keyframes fallStatic {
             0% { transform: translateY(0); opacity: 1; }
             75% { transform: translateY(92vh); opacity: 1; }
             100% { transform: translateY(92vh); opacity: 0; }
         }
 
-        /* 动画2: 2D旋转 (10%概率) */
         @keyframes fall2d {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
             75% { transform: translateY(92vh) rotate(0deg); opacity: 1; }
             100% { transform: translateY(92vh) rotate(120deg); opacity: 0; }
         }
 
-        /* 动画3: 3D翻滚 (10%概率) */
         @keyframes fall3d {
             0% { transform: translateY(0) rotate3d(1, 1, 1, 0deg); opacity: 1; }
             75% { transform: translateY(92vh) rotate3d(1, 1, 1, 0deg); opacity: 1; }
@@ -167,7 +174,6 @@
         const successImage = document.getElementById('success-image');
 
         // --- 配置区：图片路径 ---
-        // 注意：文件名必须完全匹配（区分大小写），确保文件夹里有 pics 目录
         const haoImages = ['pics/hao1.png', 'pics/hao2.png', 'pics/hao3.png', 'pics/hao4.png', 'pics/hao5.png'];
         const sadImages = ['pics/sad1.png', 'pics/sad2.png', 'pics/sad3.png', 'pics/sad4.png', 'pics/sad5.png'];
         const yesImages = ['pics/yes1.png', 'pics/yes2.png', 'pics/yes3.png'];
@@ -214,8 +220,8 @@
             const taunts = ["你说啥！？", "才不要...", "滚！", "还是算了吧...", "就不！", "就不跟你好！", "打咩!", "滚粗！", "想得美！"];
             noBtn.innerText = taunts[Math.floor(Math.random() * taunts.length)];
 
-            // 按钮变大速度
-            yesSize += 0.20; 
+            // 【参数调整】按钮变大速度
+            yesSize += 0.15; 
             yesBtn.style.transform = `scale(${yesSize})`;
         }
 
