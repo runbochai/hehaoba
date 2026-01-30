@@ -88,7 +88,6 @@
             z-index: 11;
         }
 
-        /* 核心优化：告诉浏览器这个元素会经常动，请提前准备好 GPU */
         #no-btn {
             background-color: #ff4d4d;
             color: white;
@@ -99,7 +98,7 @@
             align-items: center;
             justify-content: center;
             z-index: 12;
-            will-change: transform; /* 关键：启用硬件加速预判 */
+            will-change: transform; /* 保持硬件加速优化 */
         }
 
         #success-layer {
@@ -158,9 +157,7 @@
 
     <div id="success-layer">
         <h1 style="font-size: 2.5rem; color: #ff8da1; filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5)); font-weight: 900;">好耶！ (๑>◡<๑)</h1>
-        
         <p style="font-size: 1.5rem; color: #ff8da1; font-weight: bold;">请你吃蛋糕！</p>
-        
         <img id="success-image" class="main-image" src="" alt="成功图">
         <button onclick="location.reload()" style="margin-top: 20px; background: white; color: pink; border: 1px solid pink;">重新选！</button>
     </div>
@@ -184,28 +181,27 @@
         }
         setRandomStartImage();
 
-        // --- 核心优化：使用 transform 代替 left/top ---
+        // --- 修正后的逃跑逻辑 ---
         function escape() {
-            // 1. 第一次交互时的初始化
+            // 1. 初始化：原地锁定 (只执行一次)
             if (noBtn.style.position !== 'fixed') {
                 const rect = noBtn.getBoundingClientRect();
                 
-                // 将 left/top 归零，只用 transform 控制位置
-                noBtn.style.left = '0px';
-                noBtn.style.top = '0px';
+                // 关键点：将 left/top 设为当前真实坐标，而不是 0,0
+                noBtn.style.left = rect.left + 'px';
+                noBtn.style.top = rect.top + 'px';
                 noBtn.style.position = 'fixed';
                 
-                // 设置初始 transform，防止跳变
-                // 使用 translate3d 强制开启硬件加速
-                noBtn.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
+                // 初始不进行位移，保证视觉上完全不动
+                noBtn.style.transform = 'translate3d(0, 0, 0)';
                 
-                void noBtn.offsetWidth; // 强制重绘
+                void noBtn.offsetWidth; // 强制浏览器确认位置
                 
-                // 只对 transform 属性应用过渡，性能最高
+                // 开启 GPU 动画过渡
                 noBtn.style.transition = "transform 0.1s ease"; 
             }
 
-            // 2. 计算新坐标
+            // 2. 计算目标位置
             const padding = 20; 
             const maxX = window.innerWidth - noBtn.offsetWidth - padding;
             const maxY = window.innerHeight - noBtn.offsetHeight - padding;
@@ -213,18 +209,25 @@
             const randomX = Math.max(padding, Math.random() * maxX);
             const randomY = Math.max(padding, Math.random() * maxY);
 
-            // 3. 应用 GPU 加速移动
-            // 使用 translate3d(x, y, 0) 而不是 left/top
-            noBtn.style.transform = `translate3d(${randomX}px, ${randomY}px, 0)`;
+            // 3. 计算位移差值 (GPU 移动的核心)
+            // 因为 left/top 固定在初始位置了，我们需要算出“去哪里”和“在哪里”的差值
+            const currentLeft = parseFloat(noBtn.style.left);
+            const currentTop = parseFloat(noBtn.style.top);
+            
+            const deltaX = randomX - currentLeft;
+            const deltaY = randomY - currentTop;
+            
+            // 使用 translate3d 进行相对移动，保持流畅
+            noBtn.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
 
-            // 4. 其他逻辑不变
+            // 4. 其他 UI 更新
             const randomSadIdx = Math.floor(Math.random() * sadImages.length);
             mainImage.src = sadImages[randomSadIdx];
 
             const taunts = ["你说啥！？", "才不要...", "滚！", "还是算了吧...", "就不！", "就不跟你好！", "打咩!", "滚粗！", "想得美！"];
             noBtn.innerText = taunts[Math.floor(Math.random() * taunts.length)];
 
-            yesSize += 0.35; 
+            yesSize += 0.15; 
             yesBtn.style.transform = `scale(${yesSize})`;
         }
 
@@ -238,7 +241,6 @@
             escape();
         });
 
-        // 撒花逻辑保持不变
         function spawnConfetti() {
             const colors = ['#ff69b4', '#ffb6c1', '#ffd700', '#ffffff', '#ff8da1', '#ffc0cb'];
             const confetti = document.createElement('div');
@@ -282,7 +284,6 @@
         yesBtn.addEventListener('click', () => {
             const randomYesIdx = Math.floor(Math.random() * yesImages.length);
             successImage.src = yesImages[randomYesIdx];
-            
             successLayer.style.display = 'flex';
             startCelebration();
         });
