@@ -18,15 +18,15 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh; 
-            height: 100dvh; 
-            box-sizing: border-box; 
-            padding-bottom: env(safe-area-inset-bottom); 
+            height: 100vh;
+            height: 100dvh;
+            box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom);
             width: 100vw;
             background-color: var(--bg-color);
             font-family: 'Microsoft YaHei', sans-serif;
-            overflow: hidden; 
-            position: fixed; 
+            overflow: hidden;
+            position: fixed;
             touch-action: none;
             perspective: 1000px;
         }
@@ -34,12 +34,12 @@
         #text-box {
             font-size: 2.5rem;
             color: #ff8da1;
-            margin-bottom: 20px; 
+            margin-bottom: 20px;
             font-weight: 900;
             z-index: 10;
             filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5));
             user-select: none;
-            text-align: center; 
+            text-align: center;
             padding: 0 20px;
         }
 
@@ -50,7 +50,7 @@
             border: 6px solid #fff0f5;
             box-shadow: 0 10px 20px rgba(255, 182, 193, 0.4);
             object-fit: cover;
-            margin-bottom: 30px; 
+            margin-bottom: 30px;
             z-index: 10;
             pointer-events: none;
             user-select: none;
@@ -59,12 +59,12 @@
 
         .button-group {
             display: flex;
-            gap: 30px; 
+            gap: 30px;
             justify-content: center;
             align-items: center;
             position: relative;
             width: 100%;
-            height: 80px; 
+            height: 80px;
             z-index: 10;
         }
 
@@ -88,6 +88,7 @@
             z-index: 11;
         }
 
+        /* 核心优化：告诉浏览器这个元素会经常动，请提前准备好 GPU */
         #no-btn {
             background-color: #ff4d4d;
             color: white;
@@ -98,6 +99,7 @@
             align-items: center;
             justify-content: center;
             z-index: 12;
+            will-change: transform; /* 关键：启用硬件加速预判 */
         }
 
         #success-layer {
@@ -109,7 +111,7 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            height: 100dvh; 
+            height: 100dvh;
             padding-bottom: env(safe-area-inset-bottom);
             box-sizing: border-box;
         }
@@ -170,35 +172,40 @@
         const successLayer = document.getElementById('success-layer');
         const successImage = document.getElementById('success-image');
 
-        // --- 配置区：图片路径 ---
         const haoImages = ['pics/hao1.png', 'pics/hao2.png', 'pics/hao3.png', 'pics/hao4.png', 'pics/hao5.png'];
         const sadImages = ['pics/sad1.png', 'pics/sad2.png', 'pics/sad3.png', 'pics/sad4.png', 'pics/sad5.png'];
         const yesImages = ['pics/yes1.png', 'pics/yes2.png', 'pics/yes3.png'];
 
         let yesSize = 1;
 
-        // --- 逻辑1: 页面加载时随机选一张开场图 ---
         function setRandomStartImage() {
             const randomIdx = Math.floor(Math.random() * haoImages.length);
             mainImage.src = haoImages[randomIdx];
         }
         setRandomStartImage();
 
-        // --- 逻辑2: "不可以"按钮的逃跑逻辑 ---
+        // --- 核心优化：使用 transform 代替 left/top ---
         function escape() {
-            // 第一次交互时，先初始化按钮位置，防止瞬移
+            // 1. 第一次交互时的初始化
             if (noBtn.style.position !== 'fixed') {
                 const rect = noBtn.getBoundingClientRect();
-                noBtn.style.left = rect.left + 'px';
-                noBtn.style.top = rect.top + 'px';
+                
+                // 将 left/top 归零，只用 transform 控制位置
+                noBtn.style.left = '0px';
+                noBtn.style.top = '0px';
                 noBtn.style.position = 'fixed';
+                
+                // 设置初始 transform，防止跳变
+                // 使用 translate3d 强制开启硬件加速
+                noBtn.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
+                
                 void noBtn.offsetWidth; // 强制重绘
+                
+                // 只对 transform 属性应用过渡，性能最高
+                noBtn.style.transition = "transform 0.1s ease"; 
             }
 
-            // 移动速度：0.1s 比较灵敏，难抓
-            noBtn.style.transition = "all 0.1s ease"; 
-
-            // 计算随机位置（保留 padding 防止跑出屏幕外）
+            // 2. 计算新坐标
             const padding = 20; 
             const maxX = window.innerWidth - noBtn.offsetWidth - padding;
             const maxY = window.innerHeight - noBtn.offsetHeight - padding;
@@ -206,97 +213,79 @@
             const randomX = Math.max(padding, Math.random() * maxX);
             const randomY = Math.max(padding, Math.random() * maxY);
 
-            noBtn.style.left = randomX + 'px';
-            noBtn.style.top = randomY + 'px';
+            // 3. 应用 GPU 加速移动
+            // 使用 translate3d(x, y, 0) 而不是 left/top
+            noBtn.style.transform = `translate3d(${randomX}px, ${randomY}px, 0)`;
 
-            // 随机切换一张“委屈”图
+            // 4. 其他逻辑不变
             const randomSadIdx = Math.floor(Math.random() * sadImages.length);
             mainImage.src = sadImages[randomSadIdx];
 
-            // 随机文案
             const taunts = ["你说啥！？", "才不要...", "滚！", "还是算了吧...", "就不！", "就不跟你好！", "打咩!", "滚粗！", "想得美！"];
             noBtn.innerText = taunts[Math.floor(Math.random() * taunts.length)];
 
-            // 按钮变大速度
-            yesSize += 0.30; 
+            yesSize += 0.35; 
             yesBtn.style.transform = `scale(${yesSize})`;
         }
 
-        // 兼容电脑鼠标
         noBtn.addEventListener('mouseover', escape);
-        // 兼容手机触摸
         noBtn.addEventListener('touchstart', (e) => {
             e.preventDefault(); 
             escape();
         });
-        // 兜底点击事件
         noBtn.addEventListener('click', (e) => {
             e.preventDefault();
             escape();
         });
 
-        // --- 逻辑3: 撒花特效 ---
+        // 撒花逻辑保持不变
         function spawnConfetti() {
             const colors = ['#ff69b4', '#ffb6c1', '#ffd700', '#ffffff', '#ff8da1', '#ffc0cb'];
             const confetti = document.createElement('div');
             confetti.classList.add('confetti');
             
-            // 随机位置和颜色
             confetti.style.left = Math.random() * 100 + 'vw';
             confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             
-            // 动画时长
             confetti.style.animationDuration = Math.random() * 2 + 3 + 's';
             
-            // 随机大小
             const size = Math.random() * 10 + 6 + 'px';
             confetti.style.width = size;
             confetti.style.height = size;
             
-            // 随机动画类型
             const rand = Math.random(); 
             
             if (rand < 0.20) {
-                // 20% 概率：3D翻滚
                 confetti.style.animationName = "fall3d";
                 confetti.style.zIndex = "202";
             } else if (rand < 0.40) { 
-                // 20% 概率：2D旋转
                 confetti.style.animationName = "fall2d";
                 confetti.style.zIndex = "201";
             } else {
-                // 60% 概率：直落
                 confetti.style.animationName = "fallStatic";
             }
             
             document.body.appendChild(confetti);
 
-            // 动画结束后清理元素
             setTimeout(() => {
                 confetti.remove();
             }, 6000);
         }
 
         function startCelebration() {
-            // 密集生成：每40ms生成一个
             const interval = setInterval(spawnConfetti, 40);
-            // 持续3秒后停止生成
             setTimeout(() => {
                 clearInterval(interval);
             }, 3000);
         }
 
-        // --- 逻辑4: "和好吧"按钮点击逻辑 ---
         yesBtn.addEventListener('click', () => {
-            // 随机选一张“庆祝”图
             const randomYesIdx = Math.floor(Math.random() * yesImages.length);
             successImage.src = yesImages[randomYesIdx];
             
-            // 显示成功层并撒花
             successLayer.style.display = 'flex';
             startCelebration();
         });
     </script>
 </body>
 </html>
-
