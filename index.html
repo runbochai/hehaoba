@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我想跟你好 (๑>◡<๑)</title>
+    <style>
+        :root {
+            --primary-pink: #ffb6c1;
+            --dark-pink: #ff69b4;
+            --bg-color: #fff0f5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--bg-color);
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden; /* 禁止出现滚动条 */
+            position: fixed;  /* 锁死屏幕，防止iOS橡皮筋效果 */
+            touch-action: none;
+            perspective: 1000px; /* 为3D旋转动画提供透视效果 */
+        }
+
+        #text-box {
+            font-size: 2.8rem;
+            color: #ff8da1;
+            margin-bottom: 30px;
+            font-weight: 900;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5));
+            user-select: none;
+        }
+
+        .main-image {
+            width: 250px;
+            height: 250px;
+            border-radius: 20px;
+            border: 6px solid #fff0f5;
+            box-shadow: 0 10px 20px rgba(255, 182, 193, 0.4);
+            object-fit: cover;
+            margin-bottom: 40px;
+            z-index: 10;
+            pointer-events: none; /* 禁止长按保存图片 */
+            user-select: none;
+            transition: all 0.2s ease; /* 图片切换时的平滑过渡 */
+        }
+
+        .button-group {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; /* 移除手机端点击高亮 */
+        }
+
+        #yes-btn {
+            background-color: #98fb98;
+            color: #2e8b57;
+            box-shadow: 0 4px 0 #7ccd7c;
+            z-index: 11;
+        }
+
+        #no-btn {
+            background-color: #ff4d4d;
+            color: white;
+            box-shadow: 0 4px 0 #cc0000;
+            width: 150px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 12;
+        }
+
+        #success-layer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        /* --- 撒花特效 CSS --- */
+        .confetti {
+            position: fixed;
+            top: -20px;
+            background-color: #ff69b4;
+            z-index: 200;
+            opacity: 0;
+            animation-timing-function: ease-in;
+            animation-fill-mode: forwards;
+        }
+
+        /* 动画1: 直落 (80%概率) */
+        @keyframes fallStatic {
+            0% { transform: translateY(0); opacity: 1; }
+            75% { transform: translateY(92vh); opacity: 1; }
+            100% { transform: translateY(92vh); opacity: 0; }
+        }
+
+        /* 动画2: 2D旋转 (10%概率) */
+        @keyframes fall2d {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            75% { transform: translateY(92vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(92vh) rotate(120deg); opacity: 0; }
+        }
+
+        /* 动画3: 3D翻滚 (10%概率) */
+        @keyframes fall3d {
+            0% { transform: translateY(0) rotate3d(1, 1, 1, 0deg); opacity: 1; }
+            75% { transform: translateY(92vh) rotate3d(1, 1, 1, 0deg); opacity: 1; }
+            100% { transform: translateY(92vh) rotate3d(1, 1, 1, 140deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="text-box">我想跟你好！</div>
+
+    <img id="main-image" class="main-image" src="" alt="初始图">
+
+    <div class="button-group">
+        <button id="yes-btn">和好吧!</button>
+        <button id="no-btn">不可以!</button>
+    </div>
+
+    <div id="success-layer">
+        <h1 style="font-size: 2.5rem; color: #ff8da1; filter: drop-shadow(0 0 5px rgba(255, 141, 161, 0.5)); font-weight: 900;">好耶！ (๑>◡<๑)</h1>
+        
+        <p style="font-size: 1.5rem; color: #ff8da1; font-weight: bold;">请你吃蛋糕！</p>
+        
+        <img id="success-image" class="main-image" src="" alt="成功图">
+        <button onclick="location.reload()" style="margin-top: 20px; background: white; color: pink; border: 1px solid pink;">重新选！</button>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('no-btn');
+        const yesBtn = document.getElementById('yes-btn');
+        const mainImage = document.getElementById('main-image');
+        const successLayer = document.getElementById('success-layer');
+        const successImage = document.getElementById('success-image');
+
+        // --- 配置区：图片路径 ---
+        // 注意：文件名必须完全匹配（区分大小写），确保文件夹里有 pics 目录
+        const haoImages = ['pics/hao1.png', 'pics/hao2.png', 'pics/hao3.png', 'pics/hao4.png', 'pics/hao5.png'];
+        const sadImages = ['pics/sad1.png', 'pics/sad2.png', 'pics/sad3.png', 'pics/sad4.png', 'pics/sad5.png'];
+        const yesImages = ['pics/yes1.png', 'pics/yes2.png', 'pics/yes3.png'];
+
+        let yesSize = 1;
+
+        // --- 逻辑1: 页面加载时随机选一张开场图 ---
+        function setRandomStartImage() {
+            const randomIdx = Math.floor(Math.random() * haoImages.length);
+            mainImage.src = haoImages[randomIdx];
+        }
+        setRandomStartImage();
+
+        // --- 逻辑2: "不可以"按钮的逃跑逻辑 ---
+        function escape() {
+            // 第一次交互时，先初始化按钮位置，防止瞬移
+            if (noBtn.style.position !== 'fixed') {
+                const rect = noBtn.getBoundingClientRect();
+                noBtn.style.left = rect.left + 'px';
+                noBtn.style.top = rect.top + 'px';
+                noBtn.style.position = 'fixed';
+                void noBtn.offsetWidth; // 强制重绘
+            }
+
+            // 移动速度：0.1s 比较灵敏，难抓
+            noBtn.style.transition = "all 0.1s ease"; 
+
+            // 计算随机位置（保留 padding 防止跑出屏幕外）
+            const padding = 20; 
+            const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+            const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+            
+            const randomX = Math.max(padding, Math.random() * maxX);
+            const randomY = Math.max(padding, Math.random() * maxY);
+
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+
+            // 随机切换一张“委屈”图
+            const randomSadIdx = Math.floor(Math.random() * sadImages.length);
+            mainImage.src = sadImages[randomSadIdx];
+
+            // 随机文案
+            const taunts = ["你说啥！？", "才不要...", "滚！", "还是算了吧...", "就不！", "就不跟你好！", "打咩!", "滚粗！", "想得美！"];
+            noBtn.innerText = taunts[Math.floor(Math.random() * taunts.length)];
+
+            // 按钮变大速度
+            yesSize += 0.20; 
+            yesBtn.style.transform = `scale(${yesSize})`;
+        }
+
+        // 兼容电脑鼠标
+        noBtn.addEventListener('mouseover', escape);
+        // 兼容手机触摸
+        noBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            escape();
+        });
+        // 兜底点击事件
+        noBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            escape();
+        });
+
+        // --- 逻辑3: 撒花特效 ---
+        function spawnConfetti() {
+            const colors = ['#ff69b4', '#ffb6c1', '#ffd700', '#ffffff', '#ff8da1', '#ffc0cb'];
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            
+            // 随机位置和颜色
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // 动画时长
+            confetti.style.animationDuration = Math.random() * 2 + 3 + 's';
+            
+            // 随机大小
+            const size = Math.random() * 10 + 6 + 'px';
+            confetti.style.width = size;
+            confetti.style.height = size;
+            
+            // 随机动画类型（稀有度系统）
+            const rand = Math.random(); 
+            
+            if (rand < 0.20) {
+                // 20% 概率：3D翻滚
+                confetti.style.animationName = "fall3d";
+                confetti.style.zIndex = "202";
+            } else if (rand < 0.40) { 
+                // 20% 概率：2D旋转
+                confetti.style.animationName = "fall2d";
+                confetti.style.zIndex = "201";
+            } else {
+                // 60% 概率：直落
+                confetti.style.animationName = "fallStatic";
+            }
+            
+            document.body.appendChild(confetti);
+
+            // 动画结束后清理元素
+            setTimeout(() => {
+                confetti.remove();
+            }, 6000);
+        }
+
+        function startCelebration() {
+            // 密集生成：每40ms生成一个
+            const interval = setInterval(spawnConfetti, 40);
+            // 持续3秒后停止生成
+            setTimeout(() => {
+                clearInterval(interval);
+            }, 3000);
+        }
+
+        // --- 逻辑4: "和好吧"按钮点击逻辑 ---
+        yesBtn.addEventListener('click', () => {
+            // 随机选一张“庆祝”图
+            const randomYesIdx = Math.floor(Math.random() * yesImages.length);
+            successImage.src = yesImages[randomYesIdx];
+            
+            // 显示成功层并撒花
+            successLayer.style.display = 'flex';
+            startCelebration();
+        });
+    </script>
+</body>
+</html>
